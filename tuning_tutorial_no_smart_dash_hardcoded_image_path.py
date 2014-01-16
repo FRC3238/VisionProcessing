@@ -22,13 +22,13 @@ from cv2 import *
 import numpy as np
 import sys
 import math
-#from pynetworktables import *
+from pynetworktables import *
 
-#SmartDashboard.init()
+SmartDashboard.init()
 #pretend the robot is on the network reporting its heading to the SmartDashboard,
 #  then let the SmartDashboard user modify it and send it back to this code to simulate movement.
 robot_heading_title = 'Robot Heading (Deg):'
-#SmartDashboard.PutNumber(robot_heading_title, 0.0)
+SmartDashboard.PutNumber(robot_heading_title, 0.0)
 
 class ImageProcessor:
   #all these values could be put into the SmartDashboard for live tuning as conditions change.
@@ -48,13 +48,16 @@ class ImageProcessor:
   possible_target_color    = (255,0,255)
   vert_threshold           = math.tan(math.radians(90-20)) 
   horiz_threshold          = math.tan(math.radians(20)) 
-  degrees_horiz_field_of_view = 47.0
-  degrees_vert_field_of_view  = 480.0/640*degrees_horiz_field_of_view
-  inches_camera_height        = 54.0
-  inches_top_target_height    = 98 + 2 + 98
-  degrees_camera_pitch        = 21.0
-  degrees_sighting_offset     = -1.55
-  robot_heading               = 0.0
+  degrees_horiz_field_of_view = 47.0                                  
+  degrees_vert_field_of_view  = 480.0/640*degrees_horiz_field_of_view 
+  inches_camera_height        = 54.0                                  
+  inches_top_target_height    = 98 + 2 + 98                           
+  degrees_camera_pitch        = 21.0                                  
+  degrees_sighting_offset     = -1.55                                 
+  robot_heading               = 0.0                                   
+  x_resolution                = 640                          
+  theta                       = 49.165 * math.pi/(180 *2.0) #radians
+  real_target_width           = 2.0 #24 * 0.0254 #1 inch / 0.254 meters target is 24 inches wide
 
 
   def __init__(self, img_path):
@@ -152,7 +155,7 @@ class ImageProcessor:
         self.aim()
 
       imshow(self.targets_title, self.drawing)
-      #SmartDashboard.PutNumber("Potential Targets:", len(polygons))
+      SmartDashboard.PutNumber("Potential Targets:", len(polygons))
 
 
   def aim(self):
@@ -161,22 +164,33 @@ class ImageProcessor:
     self.target_bearing   = self.get_bearing(x, y, w, h)   
     self.target_range     = self.get_range(x, y, w, h)     
     self.target_elevation = self.get_elevation(x, y, w, h) 
-    #SmartDashboard.PutNumber("Target Range:",    self.target_range)
-    #SmartDashboard.PutNumber("Target Bearing:",  self.target_bearing)
-    #SmartDashboard.PutNumber("Target Elevation:",self.target_elevation)
-    #SmartDashboard.PutString("Target: ","Acquired!")
+    SmartDashboard.PutNumber("Target Range:",    self.target_range)
+    SmartDashboard.PutNumber("Target Bearing:",  self.target_bearing)
+    SmartDashboard.PutNumber("Target Elevation:",self.target_elevation)
+    SmartDashboard.PutString("Target: ","Acquired!")
 
   def get_bearing(self, x, y, w, h):
     return 0.0
 
   def get_range(self, x, y, w, h):
-    return 0.0
+    SmartDashboard.PutNumber("TargetWidth: ",w)
+    SmartDashboard.PutNumber("TargetHeight",h)
+    SmartDashboard.PutNumber("TargetX",x)
+    SmartDashboard.PutNumber("TargetY",y)
+    return self.distance(w)
+
+  def distance(self, pix_width):
+    fovr = self.x_resolution * self.real_target_width / pix_width
+    SmartDashboard.PutNumber("FieldOfViewReal", fovr) # = 2w_real
+    SmartDashboard.PutNumber("TanTheta", math.tan(self.theta))
+    SmartDashboard.PutNumber("fovr/tan(theta)", fovr/math.tan(self.theta))
+    return self.real_target_width*self.x_resolution/(2*pix_width*math.tan(self.theta))
 
   def get_elevation(self, x, y, w, h):
     return 0.0
 
   def reset_targeting(self):
-    #SmartDashboard.PutString("Target: ","lost...")
+    SmartDashboard.PutString("Target: ","lost...")
     self.drawing                = self.img.copy() 
     self.selected_target        = None            
     self.highest_found_so_far_x = None            
@@ -250,7 +264,8 @@ class ImageProcessor:
  
 if '__main__'==__name__:
   try:
-    img_path = "C:\\FRC\\to_furin\\hoops16.jpg" #sys.argv[1]
+    img_path = sys.argv[1]
+    #img_path = "C:\\FRC\\to_furin\\hoops16.jpg" #sys.argv[1]
   except:
     print('Please add an image path argument and try again.')
     sys.exit(2)
