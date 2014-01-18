@@ -64,7 +64,7 @@ class ImageProcessor:
   x_resolution                = 640                          
   theta                       = 49.165 * math.pi/(180 *2.0) #radians
   real_target_width           = 2.0 #24 * 0.0254 #1 inch / 0.254 meters target is 24 inches wide
-
+  angle_to_shooter            = 0 
 
   def __init__(self, img_path):
     self.img_path = img_path
@@ -179,8 +179,8 @@ class ImageProcessor:
       SmartDashboard.PutNumber("Target Elevation:",self.target_elevation)
       SmartDashboard.PutString("Target: ","Acquired!")
 
-  def get_bearing(self, x, y, w, h):
-    return 0.0
+  def get_bearing(self, w):
+    return self.bearing(w/2.0)
 
   def get_range(self, x, y, w, h):
     if enable_dashboard:
@@ -200,6 +200,10 @@ class ImageProcessor:
 
     return self.real_target_width*self.x_resolution/(2*pix_width*math.tan(self.theta))
 
+  def bearing(self,x_target):
+    return (self.theta*2/self.x_resolution)*(x_target-(self.x_resolution/2))-self.angle_to_shooter
+
+
   def get_elevation(self, x, y, w, h):
     return 0.0
 
@@ -212,7 +216,7 @@ class ImageProcessor:
     self.highest_found_so_far_x = None            
     self.highest_found_so_far   = sys.maxint      
     self.target_range           = 0               
-    self.target_bearing         = 0               
+    self.target_bearing         = -1               
     self.target_elevation       = 0               
 
   def mark_correct_shape_and_orientation(self, polygon_tuple):
