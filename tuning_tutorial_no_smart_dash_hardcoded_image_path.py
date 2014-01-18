@@ -179,8 +179,8 @@ class ImageProcessor:
       SmartDashboard.PutNumber("Target Elevation:",self.target_elevation)
       SmartDashboard.PutString("Target: ","Acquired!")
 
-  def get_bearing(self, x, y, w, h):
-    return 0.0
+  def get_bearing(self, w):
+    return self.bearing(w/2.0)
 
   def get_range(self, x, y, w, h):
     if enable_dashboard:
