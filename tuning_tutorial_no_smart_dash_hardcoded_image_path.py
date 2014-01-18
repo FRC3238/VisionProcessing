@@ -18,7 +18,7 @@
 #  Write robot response code to act on targeting info, connect and see what happens.
 #  Write robot code to send its heading to the vision processing code via NetworkTables.
 
-enable_dashboard = True
+enable_dashboard = False
 
 from cv2 import *
 import numpy as np
@@ -173,14 +173,16 @@ class ImageProcessor:
     self.target_bearing   = self.get_bearing(w)   
     self.target_range     = self.get_range(x, y, w, h)     
     self.target_elevation = self.get_elevation(x, y, w, h) 
+    print("Bearing = " + str(self.target_bearing))
     if enable_dashboard:
       SmartDashboard.PutNumber("Target Range:",    self.target_range)
       SmartDashboard.PutNumber("Target Bearing:",  self.target_bearing)
       SmartDashboard.PutNumber("Target Elevation:",self.target_elevation)
       SmartDashboard.PutString("Target: ","Acquired!")
 
+
   def get_bearing(self, w):
-    return self.bearing(w/2.0)*(360/2*math.pi)
+    return self.bearing(w/2.0)*(360/2.0*math.pi)+180
 
   def get_range(self, x, y, w, h):
     if enable_dashboard:
@@ -285,9 +287,10 @@ class ImageProcessor:
 if '__main__'==__name__:
   try:
     img_path = sys.argv[1]
-    #img_path = "C:\\FRC\\to_furin\\hoops16.jpg" #sys.argv[1]
+    #img_path = "12.jpg" #sys.argv[1]
   except:
     print('Please add an image path argument and try again.')
     sys.exit(2)
 
+  print("some message")
   ImageProcessor(img_path).process()
