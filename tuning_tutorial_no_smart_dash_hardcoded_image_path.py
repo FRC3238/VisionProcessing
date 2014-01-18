@@ -170,7 +170,7 @@ class ImageProcessor:
       self.robot_heading    = SmartDashboard.GetNumber(robot_heading_title)
 
     polygon, x, y, w, h   = self.selected_target
-    self.target_bearing   = self.get_bearing(x, y, w, h)   
+    self.target_bearing   = self.get_bearing(w)   
     self.target_range     = self.get_range(x, y, w, h)     
     self.target_elevation = self.get_elevation(x, y, w, h) 
     if enable_dashboard:
