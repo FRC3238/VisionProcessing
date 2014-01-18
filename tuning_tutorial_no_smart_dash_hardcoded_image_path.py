@@ -180,7 +180,7 @@ class ImageProcessor:
       SmartDashboard.PutString("Target: ","Acquired!")
 
   def get_bearing(self, w):
-    return self.bearing(w/2.0)
+    return self.bearing(w/2.0)*(360/2*math.pi)
 
   def get_range(self, x, y, w, h):
     if enable_dashboard:
