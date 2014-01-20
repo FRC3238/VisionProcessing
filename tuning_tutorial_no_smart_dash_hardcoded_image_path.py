@@ -47,8 +47,8 @@ class ImageProcessor:
   morph_close_iterations = 9
   target_min_width       = 20
   target_max_width       = 200
-  max_target_aspect_ratio  = 1.0
-  min_target_aspect_ratio  = 0.5
+  max_target_aspect_ratio  = 7 # 1.0 # top target is expected to be 24.5 in x 4 in.
+  min_target_aspect_ratio  = 3# 0.5
   selected_target_color    = (0,0,255)
   passed_up_target_color   = (255,255,0)
   possible_target_color    = (255,0,255)
@@ -280,8 +280,9 @@ class ImageProcessor:
     return polygon_tuples 
 
   def aspect_ratio_and_size_correct(self, width, height):
-    ratio = float(height)/width
-    return ratio < self.max_target_aspect_ratio and ratio > self.min_target_aspect_ratio and width > self.target_min_width and width < self.target_max_width
+    ratio = float(width)/height #float(height)/width
+    return ratio < self.max_target_aspect_ratio and ratio > self.min_target_aspect_ratio #and width > self.target_min_width and width < self.target_max_width
+    #note: we don't want to ignore potential targets based on pixel width and height since range will change the pixel coverage of a real target.
 
  
 if '__main__'==__name__:
