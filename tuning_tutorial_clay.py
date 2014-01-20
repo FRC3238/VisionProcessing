@@ -13,7 +13,7 @@
 #  Add SmartDashboard controls to limit thresholding and merging to single channels 
 #    and measure timing improvements.
 #  Tune camera image acquisition settings on real targets for various lighting conditions.
-#  Fill in methods for target bearing, range, and elevation, re-tuned for our live camera and actual targets.
+#  Fill in methods for target bearing, range, and elevation, re0-tuned for our live camera and actual targets.
 #  Re-write selection rules and color tuning for images from other past FRC competitions.
 #  Write robot response code to act on targeting info, connect and see what happens.
 #  Write robot code to send its heading to the vision processing code via NetworkTables.
@@ -22,6 +22,7 @@ from cv2 import *
 import numpy as np
 import sys
 import math
+from vision_lib import *
 #from pynetworktables import *
 
 #SmartDashboard.init()
@@ -66,22 +67,9 @@ class ImageProcessor:
 
     
   def process(self):
-
     
-    
-    #self.robot_heading = SmartDashboard.GetNumber(robot_heading_title)
-    vc = VideoCapture(0)
-
-    # load pic
-    if vc.isOpened(): # try to get the first frame
-      rval, frame = vc.read()
-    else:
-      rval = False
-
-    
-    #self.img            = imread(self.img_path)
-    rval, self.img = vc.read()
-    
+    self.cam = Camera()
+    self.img = self.cam.from_axis()
     drawing             = np.zeros(self.img.shape, dtype=np.uint8)
     self.source_title   = self.img_path       
     self.h_title        = "hue"                 
@@ -89,26 +77,29 @@ class ImageProcessor:
     self.v_title        = "val"                 
     self.combined_title = "Combined + Morphed" 
     self.targets_title  = "Targets" 
+    waitKey(0)
 
     while True:
-      rval, self.img = vc.read()
+      #rval, self.img = vc.read()
+      self.img = self.cam.from_webcam()
+
       #self.img = imread("C:\\FRC\\to_furin\\Hall\\"+ str(picNum) +".jpg")
       #self.img = imread("http://10.32.38.11/jpg/image.jpg")
-            
-      hsv = cvtColor(self.img, cv.CV_BGR2HSV)
-      self.h, self.s, self.v = split(hsv)
-      self.update_hue_threshold(self.hue_thresh)
-      self.update_sat_threshold(self.sat_thresh)
-      self.update_val_threshold(self.val_thresh)
-      self.hsv_calced = True
       
-      self.find_targets()
+      #hsv = cvtColor(self.img, cv.CV_BGR2HSV)
+      #self.h, self.s, self.v = split(hsv)
+      #self.update_hue_threshold(self.hue_thresh)
+      #self.update_sat_threshold(self.sat_thresh)
+      #self.update_val_threshold(self.val_thresh)
+      #self.hsv_calced = True
+      
+      #self.find_targets()
 
-      self.layout_result_windows(self.h,self.s,self.v)
+      #self.layout_result_windows(self.h,self.s,self.v)
 
-      self.set_trackbar_position()
-
-      waitKey(32)
+      #self.set_trackbar_position()
+      imshow(self.img_path, self.img)
+      waitKey(0)
 
 
 
