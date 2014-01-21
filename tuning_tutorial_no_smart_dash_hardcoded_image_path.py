@@ -48,7 +48,7 @@ class ImageProcessor:
   target_min_width       = 20
   target_max_width       = 200
   max_target_aspect_ratio  = 7 # 1.0 # top target is expected to be 24.5 in x 4 in.
-  min_target_aspect_ratio  = 3# 0.5
+  min_target_aspect_ratio  = 3 #0.01# 3# 0.5
   selected_target_color    = (0,0,255)
   passed_up_target_color   = (255,255,0)
   possible_target_color    = (255,0,255)
