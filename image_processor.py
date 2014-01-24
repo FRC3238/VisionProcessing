@@ -51,7 +51,10 @@ class ImageProcessor:
   combined_title  = "Combined + Morphed" 
   targets_title   = "Targets" 
 
-
+  #tuned for the camera settings above and the green leds. (Red didn't work as well and requires changing the threshold function to use OR of inverse and normal threshold, because red is on the top and bottom of the hue scale (wraps around.).)
+  hue_delta                   = 15
+  sat_delta                   = 25
+  val_delta                   = 100
   hue_thresh      = 80
   sat_thresh      = 233
   val_thresh      = 212
@@ -62,33 +65,42 @@ class ImageProcessor:
   val_low_thresh  = 053 # center on 212, delta as previous
   val_high_thresh = 255
   max_thresh = 255
-  hsv_calced = False
+
+  #used for the morphologyEx method that fills in the pixels in the combined image prior to identifying polygons and contours.
   kernel     = getStructuringElement(MORPH_RECT, (2,2), anchor=(1,1)) 
   morph_close_iterations = 9
-  target_min_width       = 20
-  target_max_width       = 200
-  max_target_aspect_ratio  = 10 # 1.0 # top target is expected to be 24.5 in x 4 in.
-  min_target_aspect_ratio  = 0.1 #0.01# 3# 0.5
+
+  #colors in BGR format for drawing the targets over the image.
   selected_target_color    = (0,0,255)
   passed_up_target_color   = (255,0,0)
   possible_target_color    = (0,255,0)
+
+  #used to judge whether a polygon side is near vertical or near horizontal, for filtering out shapes that don't match expected target characteristics
   vert_threshold           = math.tan(math.radians(90-20)) 
   horiz_threshold          = math.tan(math.radians(20)) 
-  degrees_horiz_field_of_view = 47.0                                  
-  degrees_vert_field_of_view  = 480.0/640*degrees_horiz_field_of_view 
-  inches_camera_height        = 54.0                                  
-  inches_top_target_height    = 98 + 2 + 98                           
-  degrees_camera_pitch        = 21.0                                  
-  degrees_sighting_offset     = -1.55                                 
-  robot_heading               = 0.0                                   
-  x_resolution                = 640                          
-  theta                       = 49.165 * math.pi/(180 *2.0) #radians
+
+  #used to look for only horizontal or vertical rectangles of an aspect ratio that matches the targets.
+  #currently open wide to find both horizontal and vertical targets
+  max_target_aspect_ratio  = 10 # 1.0 # top target is expected to be 24.5 in x 4 in.
+  min_target_aspect_ratio  = 0.1 #0.01# 3# 0.5
+
+  robot_heading               = 0.0 #input from SmartDashboard if enabled, else hard coded here.
+  x_resolution                = 640 #needs to match the camera.
+  y_resolution                = 480 
+  theta                       = math.radians(49.165) # * math.pi/(180 *2.0) #radians, half of field of vision.
   real_target_width           = 2.0 #24 * 0.0254 #1 inch / 0.254 meters target is 24 inches wide
   angle_to_shooter            = 0 
-  hue_delta                   = 15
-  sat_delta                   = 25
-  val_delta                   = 100
 
+  #not currently using these constants and may not be correct for current robot configuration.
+  # target_min_width       = 20
+  # target_max_width       = 200
+  # degrees_horiz_field_of_view = 47.0                                  
+  # degrees_vert_field_of_view  = 480.0/640*degrees_horiz_field_of_view 
+  # inches_camera_height        = 54.0                                  
+  # inches_top_target_height    = 98 + 2 + 98                           
+  # degrees_camera_pitch        = 21.0                                  
+  # degrees_sighting_offset     = -1.55                                 
+  
   def __init__(self, img_path):
     self.img_path = img_path
     self.layout_result_windows(self.h,self.s,self.v)
@@ -177,7 +189,7 @@ class ImageProcessor:
 
   def find_targets(self):
     #combine all the masks together to get their overlapping regions.
-    if True or (self.hsv_calced): 
+    if True: 
       self.combined = bitwise_and(self.h_clipped, bitwise_and(self.s_clipped, self.v_clipped))
 
       #comment above line and uncomment next line to ignore hue channel til we sort out red light hue matching around zero.  
