@@ -28,3 +28,5 @@ class Camera:
     rval, img = vc.read()
 
     return img
+
+#test
