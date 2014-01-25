@@ -54,6 +54,9 @@ class ImageProcessor:
   combined_title  = "Combined + Morphed" 
   targets_title   = "Targets" 
 
+  #for video capture mode, what approx frame rate do we want? frame rate = approx video_pause + processing time
+  video_pause     =  1 #0 milliseconds means wait for key press, waitKey takes an integer so 1 millisecond is minimal with this approach.
+
   #tuned for the camera settings above and the green leds. (Red didn't work as well and requires changing the threshold function to use OR of inverse and normal threshold, because red is on the top and bottom of the hue scale (wraps around.).)
   hue_delta                   = 15
   sat_delta                   = 25
@@ -67,7 +70,7 @@ class ImageProcessor:
   sat_high_thresh = 255
   val_low_thresh  = 053 # center on 212, delta as previous
   val_high_thresh = 255
-  max_thresh = 255
+  max_thresh      = 255
 
   #used for the morphologyEx method that fills in the pixels in the combined image prior to identifying polygons and contours.
   kernel     = getStructuringElement(MORPH_RECT, (2,2), anchor=(1,1)) 
@@ -90,8 +93,10 @@ class ImageProcessor:
   robot_heading               = 0.0 #input from SmartDashboard if enabled, else hard coded here.
   x_resolution                = 640 #needs to match the camera.
   y_resolution                = 480 
-  theta                       = math.radians(49.165) # * math.pi/(180 *2.0) #radians, half of field of vision.
-  real_target_width           = 2.0 #24 * 0.0254 #1 inch / 0.254 meters target is 24 inches wide
+  #theta                       = math.radians(49.165) #half of field of view of the camera
+  field_of_view_degrees       = 53.0
+  theta                       = math.radians(field_of_view_degrees/2.0) #half of field of view of the camera, in radians to work with math.tan function.
+  real_target_width           = 24.5 #inches #24 * 0.0254 #1 inch / 0.254 meters target is 24 inches wide
   angle_to_shooter            = 0 
 
   #not currently using these constants and may not be correct for current robot configuration.
@@ -128,6 +133,7 @@ class ImageProcessor:
 
     drawing             = np.zeros(self.img.shape, dtype=np.uint8)
 
+
     self.hsv               = cvtColor(self.img, cv.CV_BGR2HSV)
     self.h, self.s, self.v = split(self.hsv)
     self.h_clipped         = self.threshold_in_range(self.h, self.hue_thresh-self.hue_delta, self.hue_thresh+self.hue_delta)
@@ -144,7 +150,7 @@ class ImageProcessor:
 
     self.find_targets()
    
-    if waitKey(1) == ord('q'):
+    if waitKey(self.video_pause) == ord('q'):
       exit(1)
 
   def layout_result_windows(self, h, s, v):
@@ -205,6 +211,7 @@ class ImageProcessor:
   def find_targets(self):
     #combine all the masks together to get their overlapping regions.
     if True: 
+      self.reset_targeting()
       self.combined = bitwise_and(self.h_clipped, bitwise_and(self.s_clipped, self.v_clipped))
 
       #comment above line and uncomment next line to ignore hue channel til we sort out red light hue matching around zero.  
@@ -217,19 +224,21 @@ class ImageProcessor:
 
       self.contoured      = self.combined.copy() 
       contours, heirarchy = findContours(self.contoured, RETR_LIST, CHAIN_APPROX_TC89_KCOS)
-      contours = [convexHull(c.astype(np.float32),clockwise=True,returnPoints=True) for c in contours]
+      print("number of contours found = "+str(len(contours)))
       
+      #contours = [convexHull(c.astype(np.float32),clockwise=True,returnPoints=True) for c in contours]
+      # 
       polygon_tuples = self.contours_to_polygon_tuples(contours)        
       polygons       = [self.unpack_polygon(t) for t in polygon_tuples] 
 
-      self.reset_targeting()
 
       for polygon_tuple in polygon_tuples:
         self.mark_correct_shape_and_orientation(polygon_tuple) 
 
       if self.selected_target is not None:
         self.draw_target(self.highest_found_so_far_x, self.highest_found_so_far, self.selected_target_color)
-        drawContours(self.drawing, [self.unpack_polygon(self.selected_target).astype(np.int32)], -1, self.selected_target_color, thickness=10)
+        drawContours(self.drawing, contours, -1, self.selected_target_color, thickness=10)
+#        drawContours(self.drawing, [self.unpack_polygon(self.selected_target).astype(np.int32)], -1, self.selected_target_color, thickness=10)
         self.aim()
 
       if show_windows:
@@ -245,7 +254,7 @@ class ImageProcessor:
       self.robot_heading    = SmartDashboard.GetNumber(robot_heading_title)
 
     polygon, x, y, w, h   = self.selected_target
-    self.target_bearing   = self.get_bearing(w)   
+    self.target_bearing   = self.get_bearing(x + w/2.0)   
     self.target_range     = self.get_range(x, y, w, h)     
     self.target_elevation = self.get_elevation(x, y, w, h) 
     print("Range = " + str(self.target_range))
@@ -257,8 +266,8 @@ class ImageProcessor:
       SmartDashboard.PutString("Target: ","Acquired!")
 
 
-  def get_bearing(self, w):
-    return self.bearing(w/2.0)*(360/2.0*math.pi)+180
+  def get_bearing(self, target_center_x):
+    return (self.field_of_view_degrees/self.x_resolution)*(target_center_x-(self.x_resolution/2))-self.angle_to_shooter
 
   def get_range(self, x, y, w, h):
     if enable_dashboard:
@@ -299,7 +308,7 @@ class ImageProcessor:
 
   def mark_correct_shape_and_orientation(self, polygon_tuple):
     p,x,y,w,h                               = polygon_tuple
-    if isContourConvex(p) and 4==len(p) and self.slope_angles_correct(p):
+    if True: #isContourConvex(p) and 4==len(p) and self.slope_angles_correct(p):
       center_x = int(x + w/2.0)
       center_y = int(y + h/2.0)
       self.draw_target(center_x, center_y, self.possible_target_color)
