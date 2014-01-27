@@ -21,8 +21,8 @@
 enable_dashboard = False
 show_windows     = True
 
-window_scale = 1.5
-window_size = (int(640/window_scale), int(480/window_scale))
+window_scale = 0.5
+window_size = (int(640*window_scale), int(480*window_scale))
 
 from cv2 import *
 import numpy as np
