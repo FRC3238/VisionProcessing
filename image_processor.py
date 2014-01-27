@@ -17,6 +17,7 @@
 # contrast ~ 20% from left
 # color intensity ~ 18% from left
 
+
 enable_dashboard = False
 show_windows     = True
 
