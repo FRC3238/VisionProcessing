@@ -17,8 +17,6 @@
 # contrast ~ 20% from left
 # color intensity ~ 18% from left
 
-
-
 enable_dashboard = False
 show_windows     = True
 
@@ -40,6 +38,33 @@ if enable_dashboard:
 robot_heading_title = 'Robot Heading (Deg):'
 if enable_dashboard:
   SmartDashboard.PutNumber(robot_heading_title, 0.0)
+
+import time
+
+class Timer:
+
+  def __init__(self):
+     self._elapsed = 0.0
+     self._start_time = 0.0
+     self._paused = True
+
+  def start(self):
+    if self._paused:
+      self._start_time = time.clock()
+    self._paused = False
+
+  def pause(self):
+    if not self._paused:
+      self._elapsed += time.clock() - self._start_time
+    self._paused = True
+
+  def elapsed(self):
+    if self._paused:
+      return self._elapsed
+    else:
+      return self._elapsed + time.clock() - self._start_time
+
+
 
 class ImageProcessor:
   #all these values could be put into the SmartDashboard for live tuning as conditions change.
