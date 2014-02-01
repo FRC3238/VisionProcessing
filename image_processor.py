@@ -17,8 +17,12 @@
 # contrast ~ 20% from left
 # color intensity ~ 18% from left
 
+
 enable_dashboard = False
 show_windows     = True
+
+window_scale = 0.5
+window_size = (int(640*window_scale), int(480*window_scale))
 
 from cv2 import *
 import numpy as np
@@ -137,9 +141,14 @@ class ImageProcessor:
     self.s_clipped         = self.threshold_in_range(self.s, self.sat_thresh-self.sat_delta, self.sat_thresh+self.sat_delta)
     self.v_clipped         = self.threshold_in_range(self.v, self.val_thresh-self.val_delta, self.val_thresh+self.val_delta)
     if show_windows:
-      imshow(self.h_title, self.h_clipped)
-      imshow(self.s_title, self.s_clipped)
-      imshow(self.v_title, self.v_clipped)
+      h_scaled = resize(self.h_clipped, window_size)
+      s_scaled = resize(self.s_clipped, window_size)
+      v_scaled = resize(self.v_clipped, window_size)
+
+      imshow(self.h_title, h_scaled)
+      imshow(self.s_title, s_scaled)
+      imshow(self.v_title, v_scaled)
+
     self.find_targets()
    
     if waitKey(self.video_pause) == ord('q'):
@@ -149,11 +158,18 @@ class ImageProcessor:
     if show_windows:
       pos_x, pos_y        = 500,500               
       # imshow(self.img_path, self.img)
-      imshow(self.h_title, h)
-      imshow(self.s_title, s)
-      imshow(self.v_title, v)
-      imshow(self.combined_title, self.combined)
-      imshow(self.targets_title, self.img)
+
+      h_scaled        = resize(h, window_size)
+      s_scaled        = resize(s, window_size)
+      v_scaled        = resize(v, window_size)
+      combined_scaled = resize(self.combined, window_size)
+      img_scaled      = resize(self.img, window_size)
+
+      imshow(self.h_title       , h_scaled)
+      imshow(self.s_title       , s_scaled)
+      imshow(self.v_title       , v_scaled)
+      imshow(self.combined_title, combined_scaled)
+      imshow(self.targets_title , img_scaled)
 
       moveWindow(self.h_title, pos_x*1, pos_y*0);
       moveWindow(self.s_title, pos_x*0, pos_y*1);
@@ -204,12 +220,13 @@ class ImageProcessor:
       
       self.combined = morphologyEx(src=self.combined, op=MORPH_CLOSE, kernel=self.kernel, iterations=self.morph_close_iterations)   
       if show_windows:
-        imshow(self.combined_title, self.combined )
+        combined_scaled = resize(self.combined, window_size)
+        imshow(self.combined_title, combined_scaled )
 
       self.contoured      = self.combined.copy() 
       contours, heirarchy = findContours(self.contoured, RETR_LIST, CHAIN_APPROX_TC89_KCOS)
       print("number of contours found = "+str(len(contours)))
-
+      
       #contours = [convexHull(c.astype(np.float32),clockwise=True,returnPoints=True) for c in contours]
       # 
       polygon_tuples = self.contours_to_polygon_tuples(contours)        
@@ -226,7 +243,8 @@ class ImageProcessor:
         self.aim()
 
       if show_windows:
-        imshow(self.targets_title, self.drawing)
+        drawing_scaled = resize(self.drawing, window_size)
+        imshow(self.targets_title, drawing_scaled)
 
       if enable_dashboard:
         SmartDashboard.PutNumber("Potential Targets:", len(polygons))
@@ -294,7 +312,7 @@ class ImageProcessor:
     if True: #isContourConvex(p) and 4==len(p) and self.slope_angles_correct(p):
       center_x = int(x + w/2.0)
       center_y = int(y + h/2.0)
-      self.draw_target(center_x, center_y, self.possible_target_color) 
+      self.draw_target(center_x, center_y, self.possible_target_color)
 
       if center_y < self.highest_found_so_far:
         self.selected_target = polygon_tuple
