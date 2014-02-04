@@ -171,11 +171,11 @@ class ImageProcessor:
       imshow(self.combined_title, combined_scaled)
       imshow(self.targets_title , img_scaled)
 
-      moveWindow(self.h_title, pos_x*1, pos_y*0);
-      moveWindow(self.s_title, pos_x*0, pos_y*1);
-      moveWindow(self.v_title, pos_x*1, pos_y*1);
-      moveWindow(self.combined_title, pos_x*2, pos_y*0);
-      # moveWindow(self.targets_title, pos_x*2, pos_y*1);
+      #moveWindow(self.h_title, pos_x*1, pos_y*0);
+      #moveWindow(self.s_title, pos_x*0, pos_y*1);
+      #moveWindow(self.v_title, pos_x*1, pos_y*1);
+      #moveWindow(self.combined_title, pos_x*2, pos_y*0);
+      #moveWindow(self.targets_title, pos_x*2, pos_y*1);
 
       #these seem to be placed alphabetically....
       # createTrackbar( "Hue High Threshold:", self.source_title, self.hue_high_thresh, self.max_thresh, self.update_hue_high_threshold);
@@ -277,16 +277,16 @@ class ImageProcessor:
       SmartDashboard.PutNumber("TargetX",x)
       SmartDashboard.PutNumber("TargetY",y)
 
-    return self.distance(w)
+    return self.distance(h)
 
-  def distance(self, pix_width):
-    fovr = self.x_resolution * self.real_target_width / pix_width
+  def distance(self, pix_height):
+    fovr = self.x_resolution * self.real_target_width / pix_height
     if enable_dashboard:
       SmartDashboard.PutNumber("FieldOfViewReal", fovr) # = 2w_real
       SmartDashboard.PutNumber("TanTheta", math.tan(self.theta))
       SmartDashboard.PutNumber("fovr/tan(theta)", fovr/math.tan(self.theta))
 
-    return self.real_target_width*self.x_resolution/(2*pix_width*math.tan(self.theta))
+    return self.real_target_width*self.x_resolution/(2*pix_height*math.tan(self.theta))
 
   def reset_targeting(self):
     if enable_dashboard:
