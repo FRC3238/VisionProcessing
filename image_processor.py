@@ -95,7 +95,8 @@ class ImageProcessor:
   x_resolution                = 640 #needs to match the camera.
   y_resolution                = 480 
   #theta                       = math.radians(49.165) #half of field of view of the camera
-  field_of_view_degrees       = 53.0
+#  field_of_view_degrees       = 53.0 horizontal field of view
+  field_of_view_degrees       = 26.4382 # vertical field of view
   theta                       = math.radians(field_of_view_degrees/2.0) #half of field of view of the camera, in radians to work with math.tan function.
   real_target_width           = 24.5 #inches #24 * 0.0254 #1 inch / 0.254 meters target is 24 inches wide
   angle_to_shooter            = 0 
@@ -280,13 +281,13 @@ class ImageProcessor:
     return self.distance(h)
 
   def distance(self, pix_height):
-    fovr = self.x_resolution * self.real_target_width / pix_height
+    fovr = self.x_resolution * self.real_target_height / pix_height
     if enable_dashboard:
       SmartDashboard.PutNumber("FieldOfViewReal", fovr) # = 2w_real
       SmartDashboard.PutNumber("TanTheta", math.tan(self.theta))
       SmartDashboard.PutNumber("fovr/tan(theta)", fovr/math.tan(self.theta))
 
-    return self.real_target_width*self.x_resolution/(2*pix_height*math.tan(self.theta))
+    return self.real_target_height*self.y_resolution/(2*pix_height*math.tan(self.theta))
 
   def reset_targeting(self):
     if enable_dashboard:
