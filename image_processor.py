@@ -98,10 +98,8 @@ class ImageProcessor:
 #  field_of_view_degrees       = 53.0 horizontal field of view
   field_of_view_degrees       = 26.4382 # vertical field of view
   theta                       = math.radians(field_of_view_degrees/2.0) #half of field of view of the camera, in radians to work with math.tan function.
-  real_target_width           = 24.5 #inches #24 * 0.0254 #1 inch / 0.254 meters target is 24 inches wide
-  angle_to_shooter            = 0 
-
-  #not currently using these constants and may not be correct for current robot configuration.
+# real_target_width           = 24.5 #inches #24 * 0.0254 #1 inch / 0.254 meters target is 24 inches wide
+  real_target_height          = 28.5 #using these constants and may not be correct for current robot configuration.
   # target_min_width       = 20
   # target_max_width       = 200
   # degrees_horiz_field_of_view = 47.0                                  
@@ -158,6 +156,14 @@ class ImageProcessor:
   def layout_result_windows(self, h, s, v):
     if show_windows:
       pos_x, pos_y        = 500,500               
+      # imshow(self.img_path, self.img)
+
+      h_scaled        = resize(h, window_size)
+      s_scaled        = resize(s, window_size)
+      v_scaled        = resize(v, window_size)
+      combined_scaled = resize(self.combined, window_size)
+      img_scaled      = resize(self.img, window_size)
+
       # imshow(self.img_path, self.img)
 
       h_scaled        = resize(h, window_size)
@@ -226,7 +232,7 @@ class ImageProcessor:
 
       self.contoured      = self.combined.copy() 
       contours, heirarchy = findContours(self.contoured, RETR_LIST, CHAIN_APPROX_TC89_KCOS)
-      print("number of contours found = "+str(len(contours)))
+      #print("number of contours found = "+str(len(contours)))
       
       #contours = [convexHull(c.astype(np.float32),clockwise=True,returnPoints=True) for c in contours]
       # 
@@ -249,7 +255,7 @@ class ImageProcessor:
 
       if enable_dashboard:
         SmartDashboard.PutNumber("Potential Targets:", len(polygons))
-
+        print("Potential Targets:", len(polygons))
 
   def aim(self):
     if enable_dashboard:
@@ -300,9 +306,6 @@ class ImageProcessor:
     self.target_range           = 0               
     self.target_bearing         = -1               
     self.target_elevation       = 0               
-
-  def autonomous(self):
-    self.is_auto_mode = SmartDashboard.getNumber(is_auto_mode)
 
   def mark_correct_shape_and_orientation(self, polygon_tuple):
     p,x,y,w,h                               = polygon_tuple
