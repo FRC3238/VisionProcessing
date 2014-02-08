@@ -1,3 +1,4 @@
+#!/usr/bin/python
 #Team3238 Cyborg Ferrets 2014 Object Detection Code
 #Start with
 #python image_processor.py 'path/to/image.jpg'
@@ -18,16 +19,17 @@
 # color intensity ~ 18% from left
 
 
-enable_dashboard = False
-show_windows     = True
+enable_dashboard = True
+show_windows     = False
 
 window_scale = 0.5
-window_size = (int(640*window_scale), int(480*window_scale)) #window_scale and window_size scale down the picture on the screen
+window_size = (int(640*window_scale), int(480*window_scale))
 
 from cv2 import *
 import numpy as np
 import sys
 import math
+import commands
 
 if enable_dashboard:
   from pynetworktables import *
@@ -100,6 +102,9 @@ class ImageProcessor:
   theta                       = math.radians(field_of_view_degrees/2.0) #half of field of view of the camera, in radians to work with math.tan function.
 # real_target_width           = 24.5 #inches #24 * 0.0254 #1 inch / 0.254 meters target is 24 inches wide
   real_target_height          = 28.5 #using these constants and may not be correct for current robot configuration.
+  angle_to_shooter            = 0 
+
+  #not currently using these constants and may not be correct for current robot configuration.
   # target_min_width       = 20
   # target_max_width       = 200
   # degrees_horiz_field_of_view = 47.0                                  
@@ -127,6 +132,11 @@ class ImageProcessor:
 
 
   def process(self):
+
+    commands.getoutput(" yavta --set-control '0x009a0901 1' /dev/video0") 
+    #print(commands.getoutput(" yavta --get-control '0x009a0901' /dev/video0") )
+    commands.getoutput("yavta --set-control '0x009a0902 10' /dev/video0") 
+    #print(commands.getoutput(" yavta --get-control '0x009a0902' /dev/video0"))
 
     if enable_dashboard:
       self.robot_heading = SmartDashboard.GetNumber(robot_heading_title)
@@ -156,14 +166,6 @@ class ImageProcessor:
   def layout_result_windows(self, h, s, v):
     if show_windows:
       pos_x, pos_y        = 500,500               
-      # imshow(self.img_path, self.img)
-
-      h_scaled        = resize(h, window_size)
-      s_scaled        = resize(s, window_size)
-      v_scaled        = resize(v, window_size)
-      combined_scaled = resize(self.combined, window_size)
-      img_scaled      = resize(self.img, window_size)
-
       # imshow(self.img_path, self.img)
 
       h_scaled        = resize(h, window_size)
@@ -301,8 +303,8 @@ class ImageProcessor:
       
     self.drawing                = self.img.copy() 
     self.selected_target        = None            
-    self.lowest_found_so_far_x = None            
-    self.lowest_found_so_far   = 0      
+    self.lowest_found_so_far_x  = None            
+    self.lowest_found_so_far    = 0      
     self.target_range           = 0               
     self.target_bearing         = -1               
     self.target_elevation       = 0               
