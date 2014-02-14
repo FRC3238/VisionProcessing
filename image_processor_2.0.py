@@ -65,12 +65,6 @@ class ImageProcessor:
   hue_thresh      = 80
   sat_thresh      = 233
   val_thresh      = 212
-  hue_low_thresh  = 020 #center on 80, delta as previous
-  hue_high_thresh = 220
-  sat_low_thresh  = 160 #center on 233, delta as previous
-  sat_high_thresh = 255
-  val_low_thresh  = 053 # center on 212, delta as previous
-  val_high_thresh = 255
   max_thresh      = 255
 
   #used for the morphologyEx method that fills in the pixels in the combined image prior to identifying polygons and contours.
@@ -91,7 +85,18 @@ class ImageProcessor:
   max_target_aspect_ratio  = 10 # 1.0 # top target is expected to be 24.5 in x 4 in.
   min_target_aspect_ratio  = 0.1 #0.01# 3# 0.5
 
+  angle_to_robot              = 0 #camera's 0 bearing to robot's 0 bearing
+  camera_offset_position      = 0
+  morph_close_iterations      = 9
+  angle_to_shooter            = 0 #camera's 0 bearing to shooter's 0 bearing
+  camera_color_intensity      = 0  #value subject to change
+  camera_saturation           = 0  #value subject to change
+  camera_contrast             = 0  #value subject to change
+  camera_color_hue            = 0  #value subject to change
+  camera_brightness           = 20 #value subject to change
+  camera_gain                 = 0 #value subject to change
   camera_exposure             = 20
+  
   robot_heading               = 0.0 #input from SmartDashboard if enabled, else hard coded here.
   x_resolution                = 640 #needs to match the camera.
   y_resolution                = 480 
@@ -116,8 +121,17 @@ class ImageProcessor:
   def __init__(self, img_path):
     self.img_path = img_path
     self.layout_result_windows(self.h,self.s,self.v)
-    self.vc = VideoCapture(0)
+    self.vc = VideoCapture(0) 
+    SmartDashboard.PutNumber(angle_to_robot_title, self.angle_to_robot)
+    SmartDashboard.PutNumber(camera_offset_position_title, self.camera_offset_position)
+    SmartDashboard.PutNumber(morph_close_iterations_title, self.morph_close_iterations)
+    SmartDashboard.PutNumber(angle_to_shooter_title, self.angle_to_shooter)
+    SmartDashboard.PutNumber(camera_color_intensity_title, self.camera_color_intensity)
     SmartDashboard.PutNumber(camera_exposure_title, self.camera_exposure)
+    SmartDashboard.PutNumber(camera_saturation.title, self.saturation)
+    SmartDashboard.PutNumber(camera_contrast_title, self.contrast)
+    SmartDashboard.PutNumber(camera_color_hue_title, self.camera_color_hue)
+    SmartDashboard.PutNumber(camera_brihtness_title, self.camera_brightness)
 
   def video_feed(self):
     while True:
@@ -133,8 +147,18 @@ class ImageProcessor:
   def process(self):
 	
     if enable_dashboard:
-      self.camera_exposure = SmartDashboard.GetNumber(camera_exposure_title)
- 
+      self.camera_saturation = int(SmartDashboard.GetNumber(camera_saturation_title) 
+      self.angle_to_robot = int(SmartDashboard.GetNumber(angle_to_robot_title)
+      self.camera_offset_postion = int(SmartDashboard.GetNumber(camera_offset_position_title)
+      self.morph_close_iterations = int(SmartDashboard.GetNumber(morph_close_iterations_title)
+      self.angle_to_shooter = int(SmartDashboard.GetNumber(angle_to_shooter_title)
+      self.camera_color_intensity = int(SmartDashboard.GetNumber(camera_color_intensity_title)
+      self.camera_contrast = int(SmartDashboard.GetNumber(camera_contrast_title)
+      self.camera_color_hue = int(SmartDashboard.GetNumber(camera_color_hue_title)
+      self.camera_brightness = int(SmartDashboard.GetNumber(camera_brightness_title)
+      self.camera_exposure = int(SmartDashboard.GetNumber(camera_exposure_title)
+      self.camera_gain = int(SmartDashboard.GetNumber(camera_gain_title)
+
     if self.img_path is None:
       commands.getoutput(" yavta --set-control '0x009a0901 1' /dev/video0") 
       #print(commands.getoutput(" yavta --get-control '0x009a0901' /dev/video0") )
