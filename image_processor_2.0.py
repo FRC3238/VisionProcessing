@@ -19,27 +19,6 @@
 # color intensity ~ 18% from left
 
 
-#yavta -l /dev/video0
-#control 0x00980900 `Brightness' min 0 max 255 step 1 default 128 current 128.
-#control 0x00980901 `Contrast' min 0 max 255 step 1 default 32 current 32.
-#control 0x00980902 `Saturation' min 0 max 255 step 1 default 32 current 32.
-#control 0x0098090c `White Balance Temperature, Auto' min 0 max 1 step 1 default 1 current 1.
-#control 0x00980913 `Gain' min 0 max 255 step 1 default 0 current 0.
-#control 0x00980918 `Power Line Frequency' min 0 max 2 step 1 default 2 current 2.
-#  0: Disabled
-#  1: 50 Hz
-#  2: 60 Hz (*)
-#control 0x0098091a `White Balance Temperature' min 0 max 10000 step 10 default 4000 current 10000.
-#control 0x0098091b `Sharpness' min 0 max 255 step 1 default 53 current 53.
-#control 0x0098091c `Backlight Compensation' min 0 max 1 step 1 default 0 current 0.
-#control 0x009a0901 `Exposure, Auto' min 0 max 3 step 1 default 3 current 1.
-#  1: Manual Mode (*)
-#  3: Aperture Priority Mode
-#control 0x009a0902 `Exposure (Absolute)' min 1 max 10000 step 1 default 166 current 10.
-#control 0x009a0903 `Exposure, Auto Priority' min 0 max 1 step 1 default 0 current 1.
-#12 controls found.
-
-
 enable_dashboard = True
 show_windows     = False
 
@@ -56,21 +35,14 @@ if enable_dashboard:
   from pynetworktables import *
 
 if enable_dashboard:
-  ip = '10.32.38.2'
-  NetworkTable.SetIPAddress(ip)
-  NetworkTable.SetClientMode()
-  NetworkTable.Initialize()
   SmartDashboard.init()
 #pretend the robot is on the network reporting its heading to the SmartDashboard,
 #  then let the SmartDashboard user modify it and send it back to this code to simulate movement.
 camera_exposure_title = 'Camera Exposure:'
-camera_gain_title     = 'Camera Gain:'
-save_frame_title      = 'SaveFrame:'
 
 class ImageProcessor:
   #all these values could be put into the SmartDashboard for live tuning as conditions change.
 
-  process_loop_count = 0
   default_shape   = (480,640,3)
   h               = np.zeros(default_shape, dtype=np.uint8)
   s               = np.zeros(default_shape, dtype=np.uint8)
@@ -93,12 +65,6 @@ class ImageProcessor:
   hue_thresh      = 80
   sat_thresh      = 233
   val_thresh      = 212
-  hue_low_thresh  = 020 #center on 80, delta as previous
-  hue_high_thresh = 220
-  sat_low_thresh  = 160 #center on 233, delta as previous
-  sat_high_thresh = 255
-  val_low_thresh  = 053 # center on 212, delta as previous
-  val_high_thresh = 255
   max_thresh      = 255
 
   #used for the morphologyEx method that fills in the pixels in the combined image prior to identifying polygons and contours.
@@ -119,15 +85,24 @@ class ImageProcessor:
   max_target_aspect_ratio  = 10 # 1.0 # top target is expected to be 24.5 in x 4 in.
   min_target_aspect_ratio  = 0.1 #0.01# 3# 0.5
 
+  angle_to_robot              = 0 #camera's 0 bearing to robot's 0 bearing
+  camera_offset_position      = 0
+  morph_close_iterations      = 9
+  angle_to_shooter            = 0 #camera's 0 bearing to shooter's 0 bearing
+  camera_color_intensity      = 0  #value subject to change
+  camera_saturation           = 0  #value subject to change
+  camera_contrast             = 0  #value subject to change
+  camera_color_hue            = 0  #value subject to change
+  camera_brightness           = 20 #value subject to change
+  camera_gain                 = 0 #value subject to change
   camera_exposure             = 20
-  save_frame		      = False 
-  camera_gain                 = 0
+  
   robot_heading               = 0.0 #input from SmartDashboard if enabled, else hard coded here.
   x_resolution                = 640 #needs to match the camera.
   y_resolution                = 480 
   #theta                      = math.radians(49.165) #half of field of view of the camera
 #  field_of_view_degrees      = 53.0 horizontal field of view
-  field_of_view_degrees       = 35 #26.4382 # vertical field of view
+  field_of_view_degrees       = 26.4382 # vertical field of view
   theta                       = math.radians(field_of_view_degrees/2.0) #half of field of view of the camera, in radians to work with math.tan function.
 # real_target_width           = 24.5 #inches #24 * 0.0254 #1 inch / 0.254 meters target is 24 inches wide
   real_target_height          = 28.5 #using these constants and may not be correct for current robot configuration.
@@ -146,11 +121,17 @@ class ImageProcessor:
   def __init__(self, img_path):
     self.img_path = img_path
     self.layout_result_windows(self.h,self.s,self.v)
-    self.vc = VideoCapture(0)
-#    if enable_dashboard:
-      #These won't work often due to not yet being connected to network_tables server.
-#      print("getting ready to put exposure=%s" % self.camera_exposure)
-#      SmartDashboard.PutNumber(camera_gain_title, self.camera_gain)
+    self.vc = VideoCapture(0) 
+    SmartDashboard.PutNumber(angle_to_robot_title, self.angle_to_robot)
+    SmartDashboard.PutNumber(camera_offset_position_title, self.camera_offset_position)
+    SmartDashboard.PutNumber(morph_close_iterations_title, self.morph_close_iterations)
+    SmartDashboard.PutNumber(angle_to_shooter_title, self.angle_to_shooter)
+    SmartDashboard.PutNumber(camera_color_intensity_title, self.camera_color_intensity)
+    SmartDashboard.PutNumber(camera_exposure_title, self.camera_exposure)
+    SmartDashboard.PutNumber(camera_saturation.title, self.saturation)
+    SmartDashboard.PutNumber(camera_contrast_title, self.contrast)
+    SmartDashboard.PutNumber(camera_color_hue_title, self.camera_color_hue)
+    SmartDashboard.PutNumber(camera_brihtness_title, self.camera_brightness)
 
   def video_feed(self):
     while True:
@@ -162,29 +143,29 @@ class ImageProcessor:
       else:
         self.img            = imread(self.img_path)
 
-  def set_camera_settings(self):
+
+  def process(self):
+	
+    if enable_dashboard:
+      self.camera_saturation = int(SmartDashboard.GetNumber(camera_saturation_title) 
+      self.angle_to_robot = int(SmartDashboard.GetNumber(angle_to_robot_title)
+      self.camera_offset_postion = int(SmartDashboard.GetNumber(camera_offset_position_title)
+      self.morph_close_iterations = int(SmartDashboard.GetNumber(morph_close_iterations_title)
+      self.angle_to_shooter = int(SmartDashboard.GetNumber(angle_to_shooter_title)
+      self.camera_color_intensity = int(SmartDashboard.GetNumber(camera_color_intensity_title)
+      self.camera_contrast = int(SmartDashboard.GetNumber(camera_contrast_title)
+      self.camera_color_hue = int(SmartDashboard.GetNumber(camera_color_hue_title)
+      self.camera_brightness = int(SmartDashboard.GetNumber(camera_brightness_title)
+      self.camera_exposure = int(SmartDashboard.GetNumber(camera_exposure_title)
+      self.camera_gain = int(SmartDashboard.GetNumber(camera_gain_title)
+
     if self.img_path is None:
       commands.getoutput(" yavta --set-control '0x009a0901 1' /dev/video0") 
+      #print(commands.getoutput(" yavta --get-control '0x009a0901' /dev/video0") )
       commands.getoutput("yavta --set-control '0x009a0902 %s' /dev/video0" % self.camera_exposure) 
-#      commands.getoutput("yavta --set-control '0x00980913 %s' /dev/video0" % self.camera_gain) 
       #print(commands.getoutput(" yavta --get-control '0x009a0902' /dev/video0"))
 
 
-  def process(self):
-    if enable_dashboard:
-      #force initial values until smart dashboard server connects.
-      if self.process_loop_count < 20:
-        SmartDashboard.PutNumber(camera_exposure_title, self.camera_exposure)
-        SmartDashboard.PutNumber(camera_gain_title, self.camera_gain)
-        SmartDashboard.PutBoolean(save_frame_title, self.save_frame)
-        self.process_loop_count +=1 
-      self.save_frame      = SmartDashboard.GetBoolean(save_frame_title)
-      self.camera_exposure = int(SmartDashboard.GetNumber(camera_exposure_title))
-      #print('smart_dashboard camera exposure = %s' % self.camera_exposure)
-      self.camera_gain     = int(SmartDashboard.GetNumber(camera_gain_title))
-#      print('smart_dashboard camera gain = %s' % self.camera_gain)
-
-    self.set_camera_settings
     drawing             = np.zeros(self.img.shape, dtype=np.uint8)
 
 
@@ -231,12 +212,12 @@ class ImageProcessor:
       #moveWindow(self.targets_title, pos_x*2, pos_y*1);
 
       #these seem to be placed alphabetically....
-      #createTrackbar( "Hue High Threshold:", self.source_title, self.hue_high_thresh, self.max_thresh, self.update_hue_high_threshold);
-      #createTrackbar( "Hue Low Threshold:", self.source_title, self.hue_low_thresh, self.max_thresh, self.update_hue_low_threshold);
-      #createTrackbar( "Sat High Threshold:", self.source_title, self.sat_high_thresh, self.max_thresh, self.update_sat_high_threshold);
-      #createTrackbar( "Sat Low Threshold:", self.source_title, self.sat_low_thresh, self.max_thresh, self.update_sat_low_threshold);
-      #createTrackbar( "Val High Threshold:", self.source_title, self.val_high_thresh, self.max_thresh, self.update_val_high_threshold);
-      #createTrackbar( "Val Low Threshold:", self.source_title, self.val_low_thresh, self.max_thresh, self.update_val_low_threshold);
+      # createTrackbar( "Hue High Threshold:", self.source_title, self.hue_high_thresh, self.max_thresh, self.update_hue_high_threshold);
+      # createTrackbar( "Hue Low Threshold:", self.source_title, self.hue_low_thresh, self.max_thresh, self.update_hue_low_threshold);
+      # createTrackbar( "Sat High Threshold:", self.source_title, self.sat_high_thresh, self.max_thresh, self.update_sat_high_threshold);
+      # createTrackbar( "Sat Low Threshold:", self.source_title, self.sat_low_thresh, self.max_thresh, self.update_sat_low_threshold);
+      # createTrackbar( "Val High Threshold:", self.source_title, self.val_high_thresh, self.max_thresh, self.update_val_high_threshold);
+      # createTrackbar( "Val Low Threshold:", self.source_title, self.val_low_thresh, self.max_thresh, self.update_val_low_threshold);
 
 
   def update_hue_threshold(self, thresh):
@@ -291,33 +272,28 @@ class ImageProcessor:
 
       if self.selected_target is not None:
         self.draw_target(self.lowest_found_so_far_x, self.lowest_found_so_far, self.selected_target_color)
-#        drawContours(self.drawing, contours, -1, self.selected_target_color, thickness=10)
-        drawContours(self.drawing, [self.unpack_polygon(self.selected_target).astype(np.int32)], -1, self.selected_target_color, thickness=10)
+        drawContours(self.drawing, contours, -1, self.selected_target_color, thickness=10)
+#        drawContours(self.drawing, [self.unpack_polygon(self.selected_target).astype(np.int32)], -1, self.selected_target_color, thickness=10)
         self.aim()
 
       if show_windows:
-#        drawing_scaled = resize(self.drawing, window_size)
-#        imshow(self.targets_title, drawing_scaled)
-        imshow(self.targets_title, self.drawing)
+        drawing_scaled = resize(self.drawing, window_size)
+        imshow(self.targets_title, drawing_scaled)
 
       if enable_dashboard:
         SmartDashboard.PutNumber("Potential Targets:", len(polygons))
-        #print("Potential Targets:", len(polygons))
-        if self.save_frame:
-          SmartDashboard.PutBoolean(save_frame_title, False)
-          self.save_frame = False
-          imwrite("pictures/CapturedFrame.jpg", drawing_scaled)
+        print("Potential Targets:", len(polygons))
 
   def aim(self):
-#    if enable_dashboard:
-#      self.robot_heading    = SmartDashboard.GetNumber(robot_heading_title)
+    if enable_dashboard:
+      self.robot_heading    = SmartDashboard.GetNumber(robot_heading_title)
 
     polygon, x, y, w, h   = self.selected_target
     self.target_bearing   = self.get_bearing(x + w/2.0)   
     self.target_range     = self.get_range(x, y, w, h)     
     #self.target_elevation = self.get_elevation(x, y, w, h) 
-    #print("Range = " + str(self.target_range))
-    #print("Bearing = " + str(self.target_bearing))
+    print("Range = " + str(self.target_range))
+    print("Bearing = " + str(self.target_bearing))
     if enable_dashboard:
       SmartDashboard.PutNumber("Target Range:",    self.target_range)
       SmartDashboard.PutNumber("Target Bearing:",  self.target_bearing)
@@ -339,10 +315,10 @@ class ImageProcessor:
 
   def distance(self, pix_height):
     fovr = self.x_resolution * self.real_target_height / pix_height
-#    if enable_dashboard:
-#      SmartDashboard.PutNumber("FieldOfViewReal", fovr) # = 2w_real
-#      SmartDashboard.PutNumber("TanTheta", math.tan(self.theta))
-#      SmartDashboard.PutNumber("fovr/tan(theta)", fovr/math.tan(self.theta))
+    if enable_dashboard:
+      SmartDashboard.PutNumber("FieldOfViewReal", fovr) # = 2w_real
+      SmartDashboard.PutNumber("TanTheta", math.tan(self.theta))
+      SmartDashboard.PutNumber("fovr/tan(theta)", fovr/math.tan(self.theta))
 
     return self.real_target_height*self.y_resolution/(2*pix_height*math.tan(self.theta))
 
@@ -360,10 +336,7 @@ class ImageProcessor:
 
   def mark_correct_shape_and_orientation(self, polygon_tuple):
     p,x,y,w,h                               = polygon_tuple
-    #if isContourConvex(p) and 4==len(p) and self.slope_angles_correct(p):
-
-    #print("testing polygon with len(p)= ",len(p))
-    if True:
+    if True: #isContourConvex(p) and 4==len(p) and self.slope_angles_correct(p):
       center_x = int(x + w/2.0)
       center_y = int(y + h/2.0)
       self.draw_target(center_x, center_y, self.possible_target_color)
@@ -421,8 +394,7 @@ class ImageProcessor:
 
   def aspect_ratio_and_size_correct(self, width, height):
     ratio = float(width)/height #float(height)/width
-    return ratio < 0.25 or ratio > 4
-    #return ratio < self.max_target_aspect_ratio and ratio > self.min_target_aspect_ratio #and width > self.target_min_width and width < self.target_max_width
+    return ratio < self.max_target_aspect_ratio and ratio > self.min_target_aspect_ratio #and width > self.target_min_width and width < self.target_max_width
     #note: we don't want to ignore potential targets based on pixel width and height since range will change the pixel coverage of a real target.
 
  
