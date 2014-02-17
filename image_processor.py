@@ -185,6 +185,7 @@ class ImageProcessor:
 #      print('smart_dashboard camera gain = %s' % self.camera_gain)
 
     self.set_camera_settings
+
     drawing             = np.zeros(self.img.shape, dtype=np.uint8)
 
 
