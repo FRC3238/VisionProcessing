@@ -40,8 +40,8 @@
 #12 controls found.
 
 
-enable_dashboard = True
-show_windows     = False
+enable_dashboard = False
+show_windows     = True
 
 window_scale = 0.5
 window_size = (int(640*window_scale), int(480*window_scale))
@@ -93,12 +93,12 @@ class ImageProcessor:
   hue_thresh      = 80
   sat_thresh      = 233
   val_thresh      = 212
-  hue_low_thresh  = 020 #center on 80, delta as previous
-  hue_high_thresh = 220
-  sat_low_thresh  = 160 #center on 233, delta as previous
-  sat_high_thresh = 255
-  val_low_thresh  = 053 # center on 212, delta as previous
-  val_high_thresh = 255
+  hue_low_thresh  = hue_thresh - hue_delta #center on 80, delta as previous
+  hue_high_thresh = hue_thresh + hue_delta
+  sat_low_thresh  = sat_thresh - sat_delta #center on 233, delta as previous
+  sat_high_thresh = sat_thresh + sat_delta
+  val_low_thresh  = val_thresh - val_delta # center on 212, delta as previous
+  val_high_thresh = val_thresh + val_delta
   max_thresh      = 255
 
   #used for the morphologyEx method that fills in the pixels in the combined image prior to identifying polygons and contours.
@@ -191,9 +191,9 @@ class ImageProcessor:
 
     self.hsv               = cvtColor(self.img, cv.CV_BGR2HSV)
     self.h, self.s, self.v = split(self.hsv)
-    self.h_clipped         = self.threshold_in_range(self.h, self.hue_thresh-self.hue_delta, self.hue_thresh+self.hue_delta)
-    self.s_clipped         = self.threshold_in_range(self.s, self.sat_thresh-self.sat_delta, self.sat_thresh+self.sat_delta)
-    self.v_clipped         = self.threshold_in_range(self.v, self.val_thresh-self.val_delta, self.val_thresh+self.val_delta)
+    self.h_clipped         = self.threshold_in_range(self.h, self.hue_low_thresh, self.hue_high_thresh)
+    self.s_clipped         = self.threshold_in_range(self.s, self.sat_low_thresh, self.sat_high_thresh)
+    self.v_clipped         = self.threshold_in_range(self.v, self.val_low_thresh, self.val_high_thresh)
     if show_windows:
       h_scaled = resize(self.h_clipped, window_size)
       s_scaled = resize(self.s_clipped, window_size)
@@ -232,20 +232,37 @@ class ImageProcessor:
       #moveWindow(self.targets_title, pos_x*2, pos_y*1);
 
       #these seem to be placed alphabetically....
-      #createTrackbar( "Hue High Threshold:", self.source_title, self.hue_high_thresh, self.max_thresh, self.update_hue_high_threshold);
-      #createTrackbar( "Hue Low Threshold:", self.source_title, self.hue_low_thresh, self.max_thresh, self.update_hue_low_threshold);
-      #createTrackbar( "Sat High Threshold:", self.source_title, self.sat_high_thresh, self.max_thresh, self.update_sat_high_threshold);
-      #createTrackbar( "Sat Low Threshold:", self.source_title, self.sat_low_thresh, self.max_thresh, self.update_sat_low_threshold);
-      #createTrackbar( "Val High Threshold:", self.source_title, self.val_high_thresh, self.max_thresh, self.update_val_high_threshold);
-      #createTrackbar( "Val Low Threshold:", self.source_title, self.val_low_thresh, self.max_thresh, self.update_val_low_threshold);
+      createTrackbar( "Hue High Threshold:", self.targets_title, self.hue_high_thresh, self.max_thresh, self.update_hue_high_threshold);
+      createTrackbar( "Hue Low Threshold:", self.targets_title, self.hue_low_thresh, self.max_thresh, self.update_hue_low_threshold);
+      createTrackbar( "Sat High Threshold:", self.targets_title, self.sat_high_thresh, self.max_thresh, self.update_sat_high_threshold);
+      createTrackbar( "Sat Low Threshold:", self.targets_title, self.sat_low_thresh, self.max_thresh, self.update_sat_low_threshold);
+      createTrackbar( "Val High Threshold:", self.targets_title, self.val_high_thresh, self.max_thresh, self.update_val_high_threshold);
+      createTrackbar( "Val Low Threshold:", self.targets_title, self.val_low_thresh, self.max_thresh, self.update_val_low_threshold);
 
+  def update_hue_high_threshold(self, thresh):
+    self.hue_high_thresh = thresh
+
+  def update_hue_low_threshold(self, thresh):
+    self.hue_low_thresh = thresh
+
+  def update_sat_high_threshold(self, thresh):
+    self.sat_high_thresh = thresh
+
+  def update_sat_low_threshold(self, thresh):
+    self.sat_low_thresh = thresh
+
+  def update_val_high_threshold(self, thresh):
+    self.val_high_thresh = thresh
+
+  def update_val_low_threshold(self, thresh):
+    self.val_low_thresh = thresh
 
   def update_hue_threshold(self, thresh):
     delta = 15
     self.h_clipped = self.threshold_in_range(self.h, thresh-delta, thresh+delta)
     imshow(self.h_title, self.h_clipped)
     self.find_targets()
-
+  
   def update_sat_threshold(self, thresh):
     delta = 25 
     self.s_clipped = self.threshold_in_range(self.s, thresh-delta, thresh+delta)
@@ -432,7 +449,7 @@ if '__main__'==__name__:
     img_path = sys.argv[1]
   except:
     img_path= None
-    # print('Please add an image path argument and try again.')
-    # sys.exit(2)
+    print('Please add an image path argument and try again.')
+    sys.exit(2)
 
   ImageProcessor(img_path).video_feed()
