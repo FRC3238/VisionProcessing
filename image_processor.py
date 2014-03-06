@@ -40,8 +40,8 @@
 #12 controls found.
 
 
-enable_dashboard = False
-show_windows     = True
+enable_dashboard = True
+show_windows     = False
 
 window_scale = 0.5
 window_size = (int(640*window_scale), int(480*window_scale))
